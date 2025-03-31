@@ -1,6 +1,7 @@
 // frontend/src/components/FileList.js
 import React from 'react';
-import { API_BASE_URL } from '../constants';
+
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5001/api';
 
 // Accept contractId and handler as props
 function FileList({ contractId, files, handleDeleteFile }) {

@@ -6,9 +6,9 @@ import Reporting from './components/Reporting'; // Import the new component
 import EditContractModal from './components/EditContractModal';
 import EditVendorModal from './components/EditVendorModal';
 import EditPaymentModal from './components/EditPaymentModal';
-import { API_BASE_URL } from './constants';
-
 import './App.css'; // Keep or update styles
+
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5001/api';
 
 function App() {
   const [contracts, setContracts] = useState([]);
@@ -397,7 +397,6 @@ function App() {
 
       {/* ---- Render Edit Modals Conditionally ---- */}
       {isEditModalOpen && editingItem?.type === 'vendor' && (
-        // Assuming you create an EditVendorModal component
         <EditVendorModal
            isOpen={isEditModalOpen}
            onClose={handleCloseEditModal}
@@ -407,7 +406,6 @@ function App() {
         // <div> {/* Placeholder for Vendor Edit Modal */} Editing Vendor: {editingItem.companyName} </div>
       )}
       {isEditModalOpen && editingItem?.type === 'contract' && (
-        // Assuming you create an EditContractModal component
         <EditContractModal
            isOpen={isEditModalOpen}
            onClose={handleCloseEditModal}
@@ -418,7 +416,6 @@ function App() {
         // <div> {/* Placeholder for Contract Edit Modal */} Editing Contract: {editingItem.description} </div>
       )}
       {isEditModalOpen && editingItem?.type === 'payment' && (
-        // Assuming you create an EditPaymentModal component
         <EditPaymentModal
            isOpen={isEditModalOpen}
            onClose={handleCloseEditModal}

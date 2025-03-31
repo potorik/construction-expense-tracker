@@ -34,7 +34,7 @@ const storage = multer.diskStorage({
     const uniqueSuffix = uuidv4();
     const extension = path.extname(file.originalname);
     // Corrected line using template literal:
-    cb(null, `${uniqueSuffix}_${file.originalname}`); // <-- ENSURE THIS LINE IS CORRECT
+    cb(null, `${uniqueSuffix}_${file.originalname}`);
   }
   // --- END OF FIX ---
 });
@@ -172,7 +172,7 @@ app.get('/api/contracts', async (req, res) => {
         // Embed vendor name, or more details if needed
         vendorName: vendor ? vendor.companyName : 'Unknown Vendor',
         // You could also embed the whole vendor object if useful for the frontend:
-        // vendor: vendor || null
+        vendor: vendor || null
       };
     });
     res.json(contractsWithDetails);
