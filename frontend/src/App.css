@@ -1,0 +1,306 @@
+/* frontend/src/App.css */
+body {
+  font-family: sans-serif;
+  margin: 0;
+  padding: 20px;
+  background-color: #f4f7f6;
+}
+
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #333;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #eee;
+  margin: 20px 0;
+}
+
+.error-message {
+  color: #dc3545;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+}
+
+.success-message {
+  color: #155724;
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+}
+
+.loading-message {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+}
+
+/* Form Styles */
+form {
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 5px;
+}
+
+form label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  font-size: 0.9em;
+}
+
+form input[type="text"],
+form input[type="number"],
+form input[type="date"],
+form input[type="file"] {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  box-sizing: border-box; /* Include padding and border in the element's total width and height */
+}
+
+form button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+form button[type="submit"] {
+  background-color: #0d6efd;
+  color: white;
+}
+form button[type="submit"]:hover {
+  background-color: #0b5ed7;
+}
+
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  align-items: flex-end; /* Align items to bottom for button */
+}
+.form-row > div {
+  flex: 1; /* Allow columns to grow */
+  min-width: 150px; /* Prevent columns from becoming too narrow */
+}
+.form-row > button {
+  flex-shrink: 0; /* Prevent button from shrinking */
+  margin-bottom: 10px; /* Align with input margin */
+}
+.required-note {
+  font-size: 0.8em;
+  color: #6c757d;
+  width: 100%; /* Make it span full width */
+  margin-top: -5px; /* Adjust spacing */
+  margin-bottom: 10px;
+}
+
+
+/* Contract Card Styles */
+.contract-card {
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  background-color: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.contract-header {
+  background-color: #e9ecef;
+  padding: 15px;
+  border-bottom: 1px solid #ccc;
+  cursor: pointer; /* Indicate it's clickable */
+}
+.contract-header h5 { margin-bottom: 5px; }
+.contract-header small { color: #6c757d; }
+
+.contract-summary {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  font-size: 0.9em;
+  flex-wrap: wrap; /* Allow wrapping on small screens */
+}
+.contract-summary span { margin-right: 15px; margin-bottom: 5px; }
+.contract-summary strong { color: #333; }
+.paid { color: #198754; }
+.balance { color: #dc3545; }
+
+.contract-details {
+  padding: 15px;
+  border-top: 1px solid #eee; /* Separator when expanded */
+  background-color: #fdfdfd;
+}
+
+.details-section {
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
+}
+.details-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+.details-section h6 { margin-bottom: 10px; color: #495057; }
+
+/* Table styles for payments */
+.payments-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9em;
+}
+.payments-table th, .payments-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+.payments-table th {
+  background-color: #f2f2f2;
+}
+.payments-table tr:nth-child(even) { background-color: #f9f9f9; }
+
+/* File list */
+.file-list {
+  list-style: none;
+  padding: 0;
+}
+.file-list li {
+  margin-bottom: 5px;
+  font-size: 0.9em;
+}
+.file-list a {
+  text-decoration: none;
+  color: #0d6efd;
+}
+.file-list a:hover {
+  text-decoration: underline;
+}
+
+.app-nav button {
+  background-color: transparent;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.vendors-table {
+
+}
+
+.inline-vendor-fields {
+
+}
+
+.app-nav button.active {
+  background-color: #0d6efd;
+  color: white;
+}
+
+.contract-header-main { display: flex; justify-content: space-between; align-items: flex-start; }
+.contract-info { flex-grow: 1; margin-right: 10px; }
+.contract-actions button { margin-left: 5px; }
+.btn-small { padding: 3px 8px; font-size: 0.8em; }
+.btn-edit { background-color: #ffc107; color: #333; border: none; border-radius: 3px; cursor: pointer; }
+.btn-delete { background-color: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer; }
+.expand-indicator { font-size: 0.8em; color: #6c757d; margin-left: auto; }
+
+
+.file-list { list-style: none; padding: 0; }
+.file-list-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; padding: 4px 0; border-bottom: 1px solid #eee; }
+.file-list-item:last-child { border-bottom: none; }
+.file-link { text-decoration: none; color: #0d6efd; margin-right: 10px; }
+.file-link:hover { text-decoration: underline; }
+.btn-file-delete { margin-left: auto; }
+
+.payments-table td:last-child, .payments-table th:last-child { text-align: center; }
+.payments-table td button { margin: 0 3px; }
+.table-responsive { overflow-x: auto; }
+
+/* === Existing Vendors Table Styles === */
+
+.vendors-table {
+  width: 100%; /* Make table take full width of its container */
+  border-collapse: collapse; /* Remove default spacing between borders */
+  margin-top: 20px; /* Add some space above the table */
+  font-size: 0.9rem; /* Slightly smaller font for table data */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+  background-color: #fff; /* Ensure background is white */
+  border-radius: 4px; /* Slightly rounded corners for the table */
+  overflow: hidden; /* Needed for border-radius on table */
+}
+
+/* Table Header Styling */
+.vendors-table th {
+  background-color: #e9ecef; /* Light grey background for header */
+  color: #333; /* Darker text color for header */
+  font-weight: 600; /* Bolder header text */
+  padding: 12px 15px; /* Padding within header cells */
+  text-align: left; /* Align text to the left */
+  border-bottom: 2px solid #dee2e6; /* Solid bottom border for header */
+}
+
+/* Table Cell Styling */
+.vendors-table td {
+  padding: 10px 15px; /* Padding within data cells */
+  border-bottom: 1px solid #eee; /* Light border between rows */
+  color: #555; /* Standard text color */
+  vertical-align: middle; /* Align content vertically in the middle */
+}
+
+/* Alternating Row Colors (Zebra Striping) */
+.vendors-table tbody tr:nth-child(even) {
+  background-color: #f8f9fa; /* Very light grey for even rows */
+}
+
+/* Hover Effect on Rows */
+.vendors-table tbody tr:hover {
+  background-color: #e2e6ea; /* Slightly darker hover color */
+}
+
+/* Actions Column Styling */
+.vendors-table th:last-child,
+.vendors-table td:last-child {
+  text-align: right; /* Align actions buttons to the right */
+  white-space: nowrap; /* Prevent action buttons from wrapping */
+  width: 1%; /* Try to keep actions column narrow, adjust if needed */
+}
+
+/* Styling for Buttons within the Table */
+.vendors-table td .btn-edit,
+.vendors-table td .btn-delete {
+  margin: 0 3px; /* Add small spacing between buttons */
+  padding: 4px 8px; /* Make buttons a bit smaller */
+  font-size: 0.8em; /* Smaller font size for buttons */
+  /* Use styles defined previously for .btn-edit, .btn-delete */
+}
+
+/* Responsive Wrapper (Optional but recommended) */
+/* If you wrap the table in a div with class="table-responsive" in VendorManagement.js */
+.table-responsive {
+  overflow-x: auto; /* Add horizontal scroll on small screens if table is wide */
+  margin-bottom: 1rem; /* Add some space below the scrollable area */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+}

@@ -1,0 +1,64 @@
+{
+    "vendors": [
+        {
+            "id": "2865703b-7317-4615-91ff-8a57ab153eff",
+            "companyName": "VAM ",
+            "contactName": "",
+            "phone": "",
+            "email": "",
+            "address": ""
+        },
+        {
+            "id": "a731bac1-f270-4e8e-8e05-59600c129cee",
+            "companyName": "TEST COMPANY 1",
+            "contactName": "",
+            "phone": "",
+            "email": "",
+            "address": ""
+        },
+        {
+            "id": "44e6fd9b-3204-4085-b801-0bb4a68aedea",
+            "companyName": "ABC & Co",
+            "contactName": "A",
+            "phone": "",
+            "email": "",
+            "address": ""
+        }
+    ],
+    "contracts": [
+        {
+            "id": "fddfd5d2-9348-4dde-b32c-6dc4e1aca899",
+            "vendorId": "a731bac1-f270-4e8e-8e05-59600c129cee",
+            "description": "asd asdasdasd",
+            "contractAmount": 500000,
+            "estimatedCompletion": null,
+            "payments": [
+                {
+                    "id": "8a02e509-4f8a-4239-a9ac-8b2e541379a9",
+                    "date": "2025-03-07",
+                    "amount": 120000,
+                    "method": "Check",
+                    "notes": ""
+                }
+            ],
+            "files": []
+        },
+        {
+            "id": "57cdf330-36a2-4ca9-bf4f-6614503628e7",
+            "vendorId": "44e6fd9b-3204-4085-b801-0bb4a68aedea",
+            "description": "asdasd",
+            "contractAmount": 12312322,
+            "estimatedCompletion": null,
+            "payments": [
+                {
+                    "id": "401e7bae-ffd9-4989-8be7-df4d10fe9a79",
+                    "date": "2025-03-25",
+                    "amount": 50000,
+                    "method": "Bank Transfer (ACH)",
+                    "notes": ""
+                }
+            ],
+            "files": []
+        }
+    ]
+}
