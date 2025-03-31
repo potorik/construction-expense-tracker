@@ -10,4 +10,4 @@ export const PAYMENT_METHODS = [
   'Other' // Always good to have an 'Other' option
 ];
 
-export const API_BASE_URL ='https://construction-expense-tracker-q6fu.vercel.app/api';
+export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5001/api';
