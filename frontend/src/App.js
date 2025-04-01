@@ -6,6 +6,7 @@ import Reporting from './components/Reporting'; // Import the new component
 import EditContractModal from './components/EditContractModal';
 import EditVendorModal from './components/EditVendorModal';
 import EditPaymentModal from './components/EditPaymentModal';
+import LoginScreen from './components/LoginScreen';
 import './App.css'; // Keep or update styles
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5001/api';
@@ -21,6 +22,69 @@ function App() {
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null); // Will hold { ...itemData, type: 'contract' | 'vendor' | 'payment' }
+
+  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('authToken'));
+  const [authToken, setAuthToken] = useState(localStorage.getItem('authToken'));
+
+  // --- Axios Interceptor (Ensure it excludes /api/login) ---
+  useEffect(() => {
+    const interceptor = axios.interceptors.request.use(config => {
+      const token = localStorage.getItem('authToken');
+      // Check if URL exists and if it's NOT the login endpoint before adding header
+      const isApiCall = config.url && config.url.startsWith(API_BASE_URL);
+      const isLoginCall = config.url && config.url.endsWith('/login'); // Check for login endpoint
+
+      if (token && isApiCall && !isLoginCall) { // <-- Added !isLoginCall check
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    }, error => {
+      return Promise.reject(error);
+    });
+    return () => { axios.interceptors.request.eject(interceptor); };
+  }, []); // API_BASE_URL could be a dependency if it can change, but likely stable
+
+
+  // --- Login/Logout Handlers ---
+  const handleLogin = useCallback(async (password) => { // <-- Make async
+    console.log("Logging in with password:", password);
+    setError(''); // Clear previous errors
+    try {
+      // Call the backend login endpoint
+      const response = await axios.post(`${API_BASE_URL}/login`, { password }); // Send password in body
+      console.log("Login response:", response);
+
+      // Check if backend confirmed success (adjust based on backend response)
+      if (response.data?.success === true) {
+        // Password verified by backend
+        localStorage.setItem('authToken', password); // Store the confirmed password as token
+        setAuthToken(password);
+        setIsAuthenticated(true);
+      }
+      else {
+        localStorage.removeItem('authToken');
+        setAuthToken(null);
+        setIsAuthenticated(false);
+        // Should not happen if backend sends correct errors, but handle defensively
+        throw new Error(response.data?.message || 'Login failed. Please try again.');
+      }
+    } catch (err) {
+      console.error("Login error:", err);
+      // Clear any potentially stored token on failure
+      localStorage.removeItem('authToken');
+      setAuthToken(null);
+      setIsAuthenticated(false);
+      // Set error message based on backend response or generic message
+      setError(err.response?.data?.message || err.message || "Login failed. Please check password or server status.");
+    }
+  }, [setError, setAuthToken, setIsAuthenticated]);
+
+
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem('authToken');
+    setAuthToken(null);
+    setIsAuthenticated(false);
+  }, []);
 
   // --- Modal Control Handlers ---
   const handleOpenEditModal = useCallback((item, type, associatedId = null) => { // <-- Accept associatedId
@@ -335,97 +399,104 @@ function App() {
 
   return (
     <div className="container">
-      <h1>Home Construction Project Tracker</h1>
-
-      {/* Tab Navigation */}
-      <nav className="app-nav">
-        <button onClick={() => setActiveTab('contracts')} disabled={activeTab === 'contracts'} className={activeTab === 'contracts' ? 'active' : ''}>
-          Contracts
-        </button>
-        <button onClick={() => setActiveTab('vendors')} disabled={activeTab === 'vendors'} className={activeTab === 'vendors' ? 'active' : ''}>
-          Vendors
-        </button>
-        <button onClick={() => setActiveTab('reports')} disabled={activeTab === 'reports'} className={activeTab === 'reports' ? 'active' : ''}>
-          Reports
-        </button>
-
-      </nav>
-
-      {/* Display Global Error/Success Messages */}
-      {error && <div className="error-message">{error}</div>}
-      {success && <div className="success-message">{success}</div>}
-
-      {/* Conditional Rendering based on Tab */}
-      {isLoading ? (
-        <p className="loading-message">Loading data...</p>
+      {!isAuthenticated ? (
+        // Render Login Screen if not authenticated
+        <LoginScreen onLogin={handleLogin} error={error} />
       ) : (
-        <div className="tab-content">
-          {activeTab === 'contracts' && !isLoadingContracts && !isLoadingVendors && (
-            <ContractManagement
-              contracts={contracts}
-              vendors={vendors}
-              onAddContract={handleAddContract}
-              onAddPayment={handleAddPayment} // Existing add handler
-              onUploadFile={handleUploadFile} // Existing add handler
-              // --- Pass Edit/Delete Handlers ---
-              handleOpenEditModal={handleOpenEditModal}
-              handleDeleteContract={handleDeleteContract}
-              handleDeletePayment={handleDeletePayment}
-              handleDeleteFile={handleDeleteFile}
-              // --- End Edit/Delete Handlers ---
-              setError={setError}
-              setSuccess={setSuccess}
-            />
-          )}
-          {activeTab === 'vendors' && !isLoadingVendors && (
-            <VendorManagement
-              vendors={vendors}
-              onAddVendor={handleAddVendor} // Existing add handler
-              // --- Pass Edit/Delete Handlers ---
-              handleOpenEditModal={handleOpenEditModal}
-              handleDeleteVendor={handleDeleteVendor}
-              // --- End Edit/Delete Handlers ---
-              setError={setError}
-              setSuccess={setSuccess}
-            />
-          )}
-          {activeTab === 'reports' && (
-            <Reporting setError={setError} /> // Pass setError for fetch errors
-          )}
-        </div>
-      )}
+        // Render main application if authenticated
+        <> {/* Use Fragment */}
+          <h1>Home Construction Project Tracker</h1>
 
-      {/* ---- Render Edit Modals Conditionally ---- */}
-      {isEditModalOpen && editingItem?.type === 'vendor' && (
-        <EditVendorModal
-           isOpen={isEditModalOpen}
-           onClose={handleCloseEditModal}
-           vendorData={editingItem}
-           onSave={handleUpdateVendor}
-        />
-        // <div> {/* Placeholder for Vendor Edit Modal */} Editing Vendor: {editingItem.companyName} </div>
-      )}
-      {isEditModalOpen && editingItem?.type === 'contract' && (
-        <EditContractModal
-           isOpen={isEditModalOpen}
-           onClose={handleCloseEditModal}
-           contractData={editingItem}
-           vendors={vendors}
-           onSave={handleUpdateContract}
-        />
-        // <div> {/* Placeholder for Contract Edit Modal */} Editing Contract: {editingItem.description} </div>
-      )}
-      {isEditModalOpen && editingItem?.type === 'payment' && (
-        <EditPaymentModal
-           isOpen={isEditModalOpen}
-           onClose={handleCloseEditModal}
-           paymentData={editingItem}
-           onSave={handleUpdatePayment}
-        />
-        // <div> {/* Placeholder for Payment Edit Modal */} Editing Payment ID: {editingItem.id} </div>
-      )}
-      {/* ---- End Modal Rendering ---- */}
+          {/* Tab Navigation */}
+          <nav className="app-nav">
+            <button onClick={() => setActiveTab('contracts')} disabled={activeTab === 'contracts'} className={activeTab === 'contracts' ? 'active' : ''}>
+              Contracts
+            </button>
+            <button onClick={() => setActiveTab('vendors')} disabled={activeTab === 'vendors'} className={activeTab === 'vendors' ? 'active' : ''}>
+              Vendors
+            </button>
+            <button onClick={() => setActiveTab('reports')} disabled={activeTab === 'reports'} className={activeTab === 'reports' ? 'active' : ''}>
+              Reports
+            </button>
 
+          </nav>
+
+          {/* Display Global Error/Success Messages */}
+          {error && <div className="error-message">{error}</div>}
+          {success && <div className="success-message">{success}</div>}
+
+          {/* Conditional Rendering based on Tab */}
+          {isLoading ? (
+            <p className="loading-message">Loading data...</p>
+          ) : (
+            <div className="tab-content">
+              {activeTab === 'contracts' && !isLoadingContracts && !isLoadingVendors && (
+                <ContractManagement
+                  contracts={contracts}
+                  vendors={vendors}
+                  onAddContract={handleAddContract}
+                  onAddPayment={handleAddPayment} // Existing add handler
+                  onUploadFile={handleUploadFile} // Existing add handler
+                  // --- Pass Edit/Delete Handlers ---
+                  handleOpenEditModal={handleOpenEditModal}
+                  handleDeleteContract={handleDeleteContract}
+                  handleDeletePayment={handleDeletePayment}
+                  handleDeleteFile={handleDeleteFile}
+                  // --- End Edit/Delete Handlers ---
+                  setError={setError}
+                  setSuccess={setSuccess}
+                />
+              )}
+              {activeTab === 'vendors' && !isLoadingVendors && (
+                <VendorManagement
+                  vendors={vendors}
+                  onAddVendor={handleAddVendor} // Existing add handler
+                  // --- Pass Edit/Delete Handlers ---
+                  handleOpenEditModal={handleOpenEditModal}
+                  handleDeleteVendor={handleDeleteVendor}
+                  // --- End Edit/Delete Handlers ---
+                  setError={setError}
+                  setSuccess={setSuccess}
+                />
+              )}
+              {activeTab === 'reports' && (
+                <Reporting setError={setError} /> // Pass setError for fetch errors
+              )}
+            </div>
+          )}
+
+          {/* ---- Render Edit Modals Conditionally ---- */}
+          {isEditModalOpen && editingItem?.type === 'vendor' && (
+            <EditVendorModal
+              isOpen={isEditModalOpen}
+              onClose={handleCloseEditModal}
+              vendorData={editingItem}
+              onSave={handleUpdateVendor}
+            />
+            // <div> {/* Placeholder for Vendor Edit Modal */} Editing Vendor: {editingItem.companyName} </div>
+          )}
+          {isEditModalOpen && editingItem?.type === 'contract' && (
+            <EditContractModal
+              isOpen={isEditModalOpen}
+              onClose={handleCloseEditModal}
+              contractData={editingItem}
+              vendors={vendors}
+              onSave={handleUpdateContract}
+            />
+            // <div> {/* Placeholder for Contract Edit Modal */} Editing Contract: {editingItem.description} </div>
+          )}
+          {isEditModalOpen && editingItem?.type === 'payment' && (
+            <EditPaymentModal
+              isOpen={isEditModalOpen}
+              onClose={handleCloseEditModal}
+              paymentData={editingItem}
+              onSave={handleUpdatePayment}
+            />
+            // <div> {/* Placeholder for Payment Edit Modal */} Editing Payment ID: {editingItem.id} </div>
+          )}
+          {/* ---- End Modal Rendering ---- */}
+        </>
+      )}
     </div>
   );
 }

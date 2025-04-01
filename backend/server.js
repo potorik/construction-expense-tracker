@@ -1,4 +1,5 @@
 // backend/server.js
+// require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
@@ -17,9 +18,36 @@ app.use(cors()); // Allow requests from frontend (React dev server)
 app.use(express.json()); // Parse JSON request bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 
-// --- Serve Uploaded Files Statically ---
-// Make files in the 'uploads' directory accessible via URL path '/uploads'
-app.use('/uploads', express.static(UPLOAD_FOLDER));
+const STORED_PASSWORD = process.env.APP_PASSWORD || "myPass123!"; // Get password from environment
+
+if (!STORED_PASSWORD) {
+  console.error("FATAL ERROR: APP_PASSWORD environment variable is not set.");
+  process.exit(1); // Exit if password isn't configured
+}
+
+// --- Authentication Middleware ---
+const authenticateRequest = (req, res, next) => {
+  // Allow OPTIONS requests for CORS preflight
+  if (req.method === 'OPTIONS') {
+    return next();
+  }
+
+  const authHeader = req.headers.authorization;
+  let providedPassword = null;
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    providedPassword = authHeader.substring(7); // Extract token/password after 'Bearer '
+  }
+
+  // Simple comparison - For real apps, use JWT or proper session management
+  if (providedPassword === STORED_PASSWORD) {
+    next(); // Password matches, proceed to the route handler
+  }
+  else {
+    console.warn('Authentication failed: Invalid or missing token/password.');
+    res.status(401).json({ message: 'Unauthorized: Access denied.' }); // 401 Unauthorized
+  }
+};
 
 // --- Multer Configuration for File Uploads ---
 const storage = multer.diskStorage({
@@ -65,13 +93,16 @@ const loadData = async () => {
     const data = await fs.readFile(DATA_FILE, 'utf8');
     // Ensure structure exists even if file was empty or malformed
     const parsedData = data ? JSON.parse(data) : {};
+    // Return the full structure, including last_updated (which might be undefined initially)
     return {
+      last_updated: parsedData.last_updated || null, // Default to null if not present
       vendors: parsedData.vendors || [],
       contracts: parsedData.contracts || []
     };
   } catch (error) {
     if (error.code === 'ENOENT') {
-      return { vendors: [], contracts: [] }; // Return empty structure if file not found
+      // Return structure with null timestamp if file doesn't exist
+      return { last_updated: null, vendors: [], contracts: [] };
     }
     console.error("Error reading data file:", error);
     throw new Error("Could not load data.");
@@ -80,8 +111,9 @@ const loadData = async () => {
 
 const saveData = async (data) => {
   try {
-    // Ensure both keys exist when saving
+    // Ensure both keys exist and add/update the timestamp
     const dataToSave = {
+      last_updated: new Date().toISOString(), // Set current timestamp in ISO format
       vendors: data.vendors || [],
       contracts: data.contracts || []
     };
@@ -100,7 +132,34 @@ const calculateContractTotals = (contract) => {
   return { paidTotal, balanceOwed };
 };
 
+app.use('/api/contracts', authenticateRequest);
+app.use('/api/vendors', authenticateRequest);
+app.use('/api/reports', authenticateRequest);
+
 // --- API Routes ---
+// --- LOGIN ENDPOINT (Add this BEFORE applying auth middleware) ---
+app.post('/api/login', (req, res) => {
+  const { password } = req.body; // Get password from request body
+
+  if (!password) {
+    return res.status(400).json({ message: 'Password is required.' });
+  }
+
+  // Simple comparison
+  if (password === STORED_PASSWORD) {
+    // Password is correct
+    // In this simple auth, the password itself acts as the 'token'
+    // We just need to confirm it's correct on the frontend.
+    res.status(200).json({ success: true, message: 'Login successful' });
+  } else {
+    // Invalid password
+    res.status(401).json({ message: 'Invalid password' });
+  }
+});
+
+// --- Serve Uploaded Files Statically ---
+// Make files in the 'uploads' directory accessible via URL path '/uploads'
+app.use('/uploads', express.static(UPLOAD_FOLDER));
 
 // --- Vendor API Routes ---
 // GET all vendors (with optional search)

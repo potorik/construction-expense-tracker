@@ -137,8 +137,43 @@ function Reporting({ setError }) {
 
 
   // --- CSV Download Handler --- (remains the same)
-  const handleDownloadCsv = () => { /* ... existing code ... */ };
+  const handleDownloadCsv = () => {
+    if (!reportData || !reportData.csvData || reportData.csvData.length === 0) {
+      alert("No report data available to download.");
+      return;
+    }
 
+    // 1. Create CSV Header
+    const header = ['Vendor Name', 'Total Spent'];
+    // 2. Create CSV Rows (handle potential commas/quotes in names)
+    const rows = reportData.csvData.map(row => [
+      `"${row.vendorName.replace(/"/g, '""')}"`, // Escape quotes within names
+      row.totalSpent
+    ]);
+    // 3. Combine header and rows
+    const csvContent = [
+      header.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n'); // New line for each row
+
+    // 4. Create Blob
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+
+    // 5. Create Download Link
+    const link = document.createElement("a");
+    if (link.download !== undefined) { // Feature detection
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", "vendor_spending_report.csv");
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url); // Clean up blob URL
+    } else {
+      alert("CSV download is not supported in your browser.");
+    }
+  };
 
   return (
     <div>

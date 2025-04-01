@@ -38,8 +38,6 @@ function ContractManagement({
       ) : (
         <div>
           {/* Map through contracts and render ContractCard for each */}
-          console.log("contracts: ");
-          console.log(contracts);
           {contracts.map((contract) => (
             <ContractCard
               key={contract.id}
