@@ -1,5 +1,6 @@
 // frontend/src/components/ContractCard.js
 import React, { useState } from 'react';
+import Badge from 'react-bootstrap/Badge'; // Import Badge
 import PaymentList from './PaymentList';
 import PaymentForm from './PaymentForm';
 import FileList from './FileList';
@@ -58,6 +59,21 @@ function ContractCard({
           <span className="expand-indicator">{isExpanded ? '▼ Collapse' : '▶ Expand'}</span>
         </div>
       </div>
+
+      {/* --- Display Tags --- */}
+      <div className="contract-tags mt-2"> {/* mt-2 adds margin-top */}
+        {(contract.tags && contract.tags.length > 0) && contract.tags.map(tag => (
+          <span
+            key={tag.id}
+            className={"badge rounded-pill me-1"}
+            style={{ backgroundColor: tag.color || '#cccccc', color: '#333' }}
+            title={tag.name}
+            >
+            {tag.name}
+          </span>
+        ))}
+      </div>
+      {/* --- End Display Tags --- */}
 
       {isExpanded && (
         <div className="contract-details">

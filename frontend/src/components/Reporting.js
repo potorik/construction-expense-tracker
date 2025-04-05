@@ -7,35 +7,36 @@ import {
   CategoryScale,
   LinearScale,
   BarElement,
-  ArcElement,
+  ArcElement, // Required for Pie charts
   Title,
   Tooltip,
   Legend,
 } from 'chart.js';
-// import Container from 'react-bootstrap/Container';
-// import Row from 'react-bootstrap/Row';
-// import Col from 'react-bootstrap/Col';
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5001/api';
+// Using standard buttons here, but you can import Button from react-bootstrap if integrated
+// import Button from 'react-bootstrap/Button';
 
-
-// Register Chart.js components including ArcElement
+// Register Chart.js components (Make sure all needed elements are registered)
 ChartJS.register(
   CategoryScale,
   LinearScale,
   BarElement,
-  ArcElement,
+  ArcElement, // Register ArcElement
   Title,
   Tooltip,
   Legend
 );
 
-// Helper function for generating colors (simple example)
+// Determine API Base URL (use relative if served from same origin)
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5001/api';
+
+// Helper function for generating distinct colors for Pie chart slices
 const generateColors = (numColors) => {
-  const colors = [
-    'rgba(255, 99, 132, 0.6)', 'rgba(54, 162, 235, 0.6)', 'rgba(255, 206, 86, 0.6)',
-    'rgba(75, 192, 192, 0.6)', 'rgba(153, 102, 255, 0.6)', 'rgba(255, 159, 64, 0.6)',
-    'rgba(99, 255, 132, 0.6)', 'rgba(235, 54, 162, 0.6)', 'rgba(86, 255, 206, 0.6)',
-    'rgba(192, 75, 192, 0.6)', 'rgba(255, 102, 153, 0.6)', 'rgba(64, 255, 159, 0.6)',
+  const colors = [ // Add more colors if needed
+    'rgba(255, 99, 132, 0.7)', 'rgba(54, 162, 235, 0.7)', 'rgba(255, 206, 86, 0.7)',
+    'rgba(75, 192, 192, 0.7)', 'rgba(153, 102, 255, 0.7)', 'rgba(255, 159, 64, 0.7)',
+    'rgba(99, 255, 132, 0.7)', 'rgba(235, 54, 162, 0.7)', 'rgba(86, 255, 206, 0.7)',
+    'rgba(192, 75, 192, 0.7)', 'rgba(255, 102, 153, 0.7)', 'rgba(64, 255, 159, 0.7)',
+    'rgba(201, 203, 207, 0.7)' // A grey color
   ];
   // Repeat colors if more data points than predefined colors
   return Array.from({ length: numColors }, (_, i) => colors[i % colors.length]);
@@ -43,53 +44,81 @@ const generateColors = (numColors) => {
 
 
 function Reporting({ setError }) {
-  const [reportData, setReportData] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // State for different report data and loading status
+  const [vendorReportData, setVendorReportData] = useState(null);
+  const [tagReportData, setTagReportData] = useState(null);
+  const [isLoadingVendor, setIsLoadingVendor] = useState(true);
+  const [isLoadingTag, setIsLoadingTag] = useState(true);
+
+  // Refs for charts (optional, can be used to access chart instances)
   const barChartRef = useRef(null);
   const pieChartRef = useRef(null);
 
+  // Fetch Vendor Spending Report Data
   useEffect(() => {
-    // ... (fetchReportData remains the same) ...
-    const fetchReportData = async () => {
-      setIsLoading(true);
-      setError('');
+    const fetchVendorReport = async () => {
+      setIsLoadingVendor(true);
+      // Don't clear global error here, let fetchTagReport do it or handle globally
       try {
         const response = await axios.get(`${API_BASE_URL}/reports/spending-by-vendor`);
-        setReportData(response.data);
+        setVendorReportData(response.data); // Expects { labels, data, csvData, summary }
       } catch (err) {
-        console.error("Fetch report error:", err);
-        setError(err.response?.data?.message || err.message || "Failed to fetch report data.");
-        setReportData(null);
+        console.error("Fetch vendor report error:", err);
+        setError(err.response?.data?.message || err.message || "Failed to fetch vendor spending report.");
+        setVendorReportData(null);
       } finally {
-        setIsLoading(false);
+        setIsLoadingVendor(false);
       }
     };
-    fetchReportData();
-  }, [setError]);
+    fetchVendorReport();
+  }, [setError]); // Dependency array includes setError
 
+  // Fetch Tag Spending Report Data
+  useEffect(() => {
+    const fetchTagReport = async () => {
+      setIsLoadingTag(true);
+      setError(''); // Clear errors before fetching this report
+      try {
+        const response = await axios.get(`${API_BASE_URL}/reports/spending-by-tag`);
+        setTagReportData(response.data); // Expects { labels, data, colors, csvData }
+      } catch (err) {
+        console.error("Fetch tag report error:", err);
+        setError(err.response?.data?.message || err.message || "Failed to fetch tag spending report.");
+        setTagReportData(null);
+      } finally {
+        setIsLoadingTag(false);
+      }
+    };
+    fetchTagReport();
+  }, [setError]); // Dependency array includes setError
+
+  // --- Helper to format currency ---
+  const formatCurrency = (value) => {
+    // Ensure value is a number, default to 0 if not
+    const numberValue = typeof value === 'number' ? value : 0;
+    return numberValue.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+  }
 
   // --- Shared Tooltip Callback ---
   const tooltipLabelCallback = (context) => {
     let label = context.label || ''; // Pie chart uses label directly
-    if (label) {
-      label += ': ';
-    }
-    let value = context.parsed?.y ?? context.parsed; // Bar uses parsed.y, Pie uses parsed directly
-    if (value !== null && !isNaN(value)) {
-      label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+    if (label) { label += ': '; }
+    // Use context.parsed for Pie, context.parsed.y for Bar
+    let value = context.parsed?.y ?? context.parsed;
+    if (value !== null && typeof value === 'number') {
+      label += formatCurrency(value);
     }
     return label;
   };
 
-
-  // --- Bar Chart Config ---
+  // --- Bar Chart Config (Vendors) ---
   const barChartOptions = {
     responsive: true,
-    maintainAspectRatio: false, // Allow custom height/width via container
+    maintainAspectRatio: false,
     plugins: {
-      legend: { display: false }, // Usually hide legend for single dataset bar charts
+      legend: { display: false },
       title: { display: true, text: 'Total Spending by Vendor' },
-      tooltip: { callbacks: { label: tooltipLabelCallback } } // Use shared callback
+      tooltip: { callbacks: { label: tooltipLabelCallback } }
     },
     scales: {
       y: {
@@ -102,78 +131,87 @@ function Reporting({ setError }) {
   };
 
   const barChartData = {
-    labels: reportData?.labels || [],
-    datasets: [ {
-      label: 'Total Spent ($)', // Used in tooltip
-      data: reportData?.data || [],
+    labels: vendorReportData?.labels || [],
+    datasets: [{
+      label: 'Total Spent ($)',
+      data: vendorReportData?.data || [],
       backgroundColor: 'rgba(54, 162, 235, 0.6)',
       borderColor: 'rgba(54, 162, 235, 1)',
       borderWidth: 1,
     }],
   };
 
-
-  // --- Pie Chart Config ---
-  const pieChartOptions = {
+  // --- Pie Chart Config (Tags) ---
+  const tagPieChartOptions = {
     responsive: true,
-    maintainAspectRatio: false, // Allow custom height/width via container
+    maintainAspectRatio: false,
     plugins: {
-      legend: { position: 'top' }, // Show legend for pie slices
-      title: { display: true, text: 'Spending Distribution by Vendor'},
-      tooltip: { callbacks: { label: tooltipLabelCallback } } // Use shared callback
+      legend: { position: 'top' },
+      title: { display: true, text: 'Spending Distribution by Tag' },
+      tooltip: { callbacks: { label: tooltipLabelCallback } }
     }
   };
 
-  const pieChartData = {
-    labels: reportData?.labels || [], // Vendor names
-    datasets: [ {
-      label: 'Total Spent ($)', // Used in tooltip
-      data: reportData?.data || [],
-      backgroundColor: generateColors(reportData?.data?.length || 0), // Generate slice colors
-      borderColor: generateColors(reportData?.data?.length || 0).map(color => color.replace('0.6', '1')), // Make borders solid
+  const tagPieChartData = {
+    labels: tagReportData?.labels || [],
+    datasets: [{
+      label: 'Total Spent ($)',
+      data: tagReportData?.data || [],
+      backgroundColor: tagReportData?.colors || generateColors(tagReportData?.data?.length || 0), // Use colors from API or generate
+      borderColor: '#ffffff', // White border between slices
       borderWidth: 1,
     }],
   };
 
+  // --- CSV Download Handlers ---
+  const createCsvDownloader = (reportDataObj, filename) => {
+    return () => {
+      if (!reportDataObj || !reportDataObj.csvData || reportDataObj.csvData.length === 0) {
+        alert(`No data available to download for ${filename}.`);
+        return;
+      }
+      // Determine headers based on keys of the first csvData object
+      const headers = Object.keys(reportDataObj.csvData[0]);
+      const headerRow = headers.join(',');
 
-  // --- CSV Download Handler --- (remains the same)
-  const handleDownloadCsv = () => {
-    if (!reportData || !reportData.csvData || reportData.csvData.length === 0) {
-      alert("No report data available to download.");
-      return;
-    }
+      // Create rows, ensuring proper CSV escaping for values
+      const rows = reportDataObj.csvData.map(row => {
+        return headers.map(header => {
+          const value = row[header] === null || row[header] === undefined ? '' : String(row[header]);
+          // Escape quotes and wrap in quotes if value contains comma, quote, or newline
+          const escapedValue = value.replace(/"/g, '""');
+          return (value.includes(',') || value.includes('"') || value.includes('\n')) ? `"${escapedValue}"` : escapedValue;
+        }).join(',');
+      });
 
-    // 1. Create CSV Header
-    const header = ['Vendor Name', 'Total Spent'];
-    // 2. Create CSV Rows (handle potential commas/quotes in names)
-    const rows = reportData.csvData.map(row => [
-      `"${row.vendorName.replace(/"/g, '""')}"`, // Escape quotes within names
-      row.totalSpent
-    ]);
-    // 3. Combine header and rows
-    const csvContent = [
-      header.join(','),
-      ...rows.map(row => row.join(','))
-    ].join('\n'); // New line for each row
+      const csvContent = [headerRow, ...rows].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
 
-    // 4. Create Blob
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-
-    // 5. Create Download Link
-    const link = document.createElement("a");
-    if (link.download !== undefined) { // Feature detection
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute("download", "vendor_spending_report.csv");
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url); // Clean up blob URL
-    } else {
-      alert("CSV download is not supported in your browser.");
-    }
+      if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else {
+        alert("CSV download is not supported in your browser.");
+      }
+    };
   };
+
+  const handleDownloadVendorCsv = createCsvDownloader(vendorReportData, 'vendor_spending_report.csv');
+  const handleDownloadTagCsv = createCsvDownloader(tagReportData, 'tag_spending_report.csv');
+
+  // --- Combined Loading State ---
+  const isLoading = isLoadingVendor || isLoadingTag;
+
+  // --- Extract Summary Data ---
+  // Assuming summary comes from the vendor report endpoint
+  const summary = vendorReportData?.summary;
 
   return (
     <div>
@@ -181,27 +219,78 @@ function Reporting({ setError }) {
 
       {isLoading ? (
         <p className="loading-message">Loading report data...</p>
-      ) : !reportData || reportData.labels.length === 0 ? (
-        <p>No spending data available to report.</p>
+      ) : (!vendorReportData && !tagReportData) ? ( // Check if both failed or returned null
+        <p>Could not load report data.</p> // Display if both fetches failed
       ) : (
         <div className="report-container">
-          {/* --- Layout for Charts (Example using simple divs/flexbox) --- */}
+
+          {/* --- Display Summary Statistics --- */}
+          <div className="report-summary" style={{ marginBottom: '30px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '5px', border: '1px solid #dee2e6', display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: '15px' }}>
+            {summary ? (
+              <>
+                <div style={{ textAlign: 'center', margin: '10px' }}>
+                  <h4 style={{ marginBottom: '5px', color: '#495057', fontSize: '1rem' }}>Total Contracted</h4>
+                  <p style={{ fontSize: '1.4em', fontWeight: 'bold', color: '#0d6efd', margin: 0 }}>{formatCurrency(summary.totalContracted)}</p>
+                </div>
+                <div style={{ textAlign: 'center', margin: '10px' }}>
+                  <h4 style={{ marginBottom: '5px', color: '#495057', fontSize: '1rem' }}>Total Spent</h4>
+                  <p style={{ fontSize: '1.4em', fontWeight: 'bold', color: '#198754', margin: 0 }}>{formatCurrency(summary.totalSpent)}</p>
+                </div>
+                <div style={{ textAlign: 'center', margin: '10px' }}>
+                  <h4 style={{ marginBottom: '5px', color: '#495057', fontSize: '1rem' }}>Remaining Liability</h4>
+                  <p style={{ fontSize: '1.4em', fontWeight: 'bold', color: '#dc3545', margin: 0 }}>{formatCurrency(summary.totalContracted - summary.totalSpent)}</p>
+                </div>
+              </>
+            ) : (
+              // Show placeholder if vendor report loaded but summary was missing
+              !isLoadingVendor && <p>Summary data not available.</p>
+            )}
+          </div>
+          {/* --- End Summary Statistics --- */}
+
+
+          {/* --- Charts --- */}
           <div className="charts-wrapper" style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', marginBottom: '30px' }}>
-            {/* Bar Chart */}
-            <div className="chart-container" style={{ flex: '1 1 400px', minWidth: '300px', height: '400px', position: 'relative' }}>
-              <Bar ref={barChartRef} options={barChartOptions} data={barChartData} key={`bar-${JSON.stringify(reportData)}`} />
+            {/* Vendor Bar Chart */}
+            <div className="chart-container" style={{ flex: '1 1 400px', minWidth: '300px', height: '400px', position: 'relative', padding: '10px', border: '1px solid #eee', borderRadius: '4px' }}>
+              <h4 style={{ textAlign: 'center', marginBottom: '15px' }}>Spending by Vendor</h4>
+              {(vendorReportData?.labels?.length > 0) ? (
+                <Bar ref={barChartRef} options={barChartOptions} data={barChartData} />
+              ) : !isLoadingVendor ? ( // Show only if not loading
+                <p className="text-muted text-center mt-5">No vendor spending data.</p>
+              ) : null}
             </div>
-            {/* Pie Chart */}
-            <div className="chart-container" style={{ flex: '1 1 350px', minWidth: '250px', height: '400px', position: 'relative' }}>
-              <Pie ref={pieChartRef} options={pieChartOptions} data={pieChartData} key={`pie-${JSON.stringify(reportData)}`} />
+
+            {/* Tag Pie Chart */}
+            <div className="chart-container" style={{ flex: '1 1 350px', minWidth: '250px', height: '400px', position: 'relative', padding: '10px', border: '1px solid #eee', borderRadius: '4px' }}>
+              <h4 style={{ textAlign: 'center', marginBottom: '15px' }}>Spending by Tag</h4>
+              {(tagReportData?.labels?.length > 0) ? (
+                <Pie ref={pieChartRef} options={tagPieChartOptions} data={tagPieChartData} />
+              ) : !isLoadingTag ? ( // Show only if not loading
+                <p className="text-muted text-center mt-5">No tag spending data.</p>
+              ) : null}
             </div>
           </div>
-          {/* --- End Layout --- */}
+          {/* --- End Charts --- */}
+
 
           {/* --- Actions --- */}
           <div className="report-actions" style={{ marginTop: '20px', textAlign: 'center' }}>
-            <button onClick={handleDownloadCsv} className="btn btn-secondary"> {/* Example Bootstrap button class */}
-              Download CSV Report
+            <button
+              onClick={handleDownloadVendorCsv}
+              className="btn btn-secondary me-2" // Using Bootstrap classes assumed available
+              disabled={!vendorReportData?.csvData?.length}
+              title={!vendorReportData?.csvData?.length ? "No vendor data to download" : "Download vendor spending as CSV"}
+            >
+              Download Vendor CSV
+            </button>
+            <button
+              onClick={handleDownloadTagCsv}
+              className="btn btn-secondary" // Using Bootstrap classes assumed available
+              disabled={!tagReportData?.csvData?.length}
+              title={!tagReportData?.csvData?.length ? "No tag data to download" : "Download tag spending as CSV"}
+            >
+              Download Tag CSV
             </button>
           </div>
         </div>
